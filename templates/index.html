@@ -1,7 +1,75 @@
 {% extends 'base.html' %}{% set active='inicio' %}
 {% block content %}
-<section class="hero"><div class="container"><div class="row align-items-center g-5"><div class="col-lg-6"><p class="eyebrow">PROYECTO INTEGRADOR · AC2208</p><h1>Matemática que <span>se puede explorar.</span></h1><p class="lead">Cálculo multivariable y análisis vectorial aplicado a problemas de ingeniería. Formula, resuelve, visualiza e interpreta.</p><div class="d-flex flex-wrap gap-2"><a href="{{ url_for('laboratorio') }}" class="btn btn-primary btn-lg">Abrir laboratorio</a><a href="{{ url_for('aplicaciones') }}" class="btn btn-outline-light btn-lg">Ver caso integrador</a></div><div class="stat-row"><div><strong>3</strong><span>unidades conectadas</span></div><div><strong>2D / 3D</strong><span>visualización Plotly</span></div><div><strong>∇</strong><span>cálculo simbólico</span></div></div></div><div class="col-lg-6"><div class="hero-plot" id="hero-surface"></div></div></div></div></section>
-<section class="section"><div class="container"><p class="eyebrow">RECORRIDO ACADÉMICO</p><h2 class="section-title">Una sola ruta, desde el modelo hasta la decisión.</h2><div class="flow"><span>Problema</span><i>→</i><span>Modelo</span><i>→</i><span>Cálculo</span><i>→</i><span>Gráfica</span><i>→</i><span>Interpretación</span><i>→</i><span>Ingeniería</span></div></div></section>
-<section class="section section-muted"><div class="container"><div class="row g-4"><div class="col-md-4"><a class="unit-card u1" href="{{ url_for('unidad', number=1) }}"><span>UNIDAD 01</span><h3>Cálculo diferencial</h3><p>Funciones de varias variables, gradiente, planos tangentes, extremos y optimización.</p><b>Explorar →</b></a></div><div class="col-md-4"><a class="unit-card u2" href="{{ url_for('unidad', number=2) }}"><span>UNIDAD 02</span><h3>Cálculo integral</h3><p>Integrales dobles y triples, polares, áreas, masas y centros de masa.</p><b>Explorar →</b></a></div><div class="col-md-4"><a class="unit-card u3" href="{{ url_for('unidad', number=3) }}"><span>UNIDAD 03</span><h3>Análisis vectorial</h3><p>Campos, divergencia, rotacional, trayectorias e integrales de línea.</p><b>Explorar →</b></a></div></div></div></section>
-<section class="section"><div class="container row align-items-center g-5"><div class="col-lg-5"><p class="eyebrow">APRENDER HACIENDO</p><h2 class="section-title">Cada resultado cuenta su propia historia.</h2><p class="text-secondary">Las calculadoras no se limitan al valor final: muestran datos, fórmula, sustitución, desarrollo, resultado y una lectura aplicada.</p></div><div class="col-lg-7"><ol class="numbered"><li><b>Datos</b><span>Define función, punto, región o campo.</span></li><li><b>Fórmula</b><span>La plataforma plantea el método apropiado.</span></li><li><b>Procedimiento</b><span>SymPy desarrolla y conserva los pasos esenciales.</span></li><li><b>Interpretación</b><span>Conecta el resultado con una situación de ingeniería.</span></li></ol></div></div></section>
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <p class="eyebrow">PROYECTO INTEGRADOR </p>
+                <h1>Matemática que <span>se puede explorar.</span></h1>
+                <p class="lead">Cálculo multivariable y análisis vectorial aplicado a problemas de ingeniería. Formula,
+                    resuelve, visualiza e interpreta.</p>
+                <div class="d-flex flex-wrap gap-2"><a href="{{ url_for('laboratorio') }}"
+                        class="btn btn-primary btn-lg">Abrir laboratorio</a><a href="{{ url_for('aplicaciones') }}"
+                        class="btn btn-outline-light btn-lg">Ver caso integrador</a></div>
+                <div class="stat-row">
+                    <div><strong>3</strong><span>unidades conectadas</span></div>
+                    <div><strong>2D / 3D</strong><span>visualización Plotly</span></div>
+                    <div><strong>∇</strong><span>cálculo simbólico</span></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-plot" id="hero-surface"></div>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section">
+    <div class="container">
+        <p class="eyebrow">RECORRIDO ACADÉMICO</p>
+        <h2 class="section-title">Una sola ruta, desde el modelo hasta la decisión.</h2>
+        <div class="flow">
+            <span>Problema</span><i>→</i><span>Modelo</span><i>→</i><span>Cálculo</span><i>→</i><span>Gráfica</span><i>→</i><span>Interpretación</span><i>→</i><span>Ingeniería</span>
+        </div>
+    </div>
+</section>
+<section class="section section-muted">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4"><a class="unit-card u1" href="{{ url_for('unidad', number=1) }}"><span>UNIDAD
+                        01</span>
+                    <h3>Cálculo diferencial</h3>
+                    <p>Funciones de varias variables, gradiente, planos tangentes, extremos y optimización.</p>
+                    <b>Explorar →</b>
+                </a></div>
+            <div class="col-md-4"><a class="unit-card u2" href="{{ url_for('unidad', number=2) }}"><span>UNIDAD
+                        02</span>
+                    <h3>Cálculo integral</h3>
+                    <p>Integrales dobles y triples, polares, áreas, masas y centros de masa.</p><b>Explorar →</b>
+                </a></div>
+            <div class="col-md-4"><a class="unit-card u3" href="{{ url_for('unidad', number=3) }}"><span>UNIDAD
+                        03</span>
+                    <h3>Análisis vectorial</h3>
+                    <p>Campos, divergencia, rotacional, trayectorias e integrales de línea.</p><b>Explorar →</b>
+                </a></div>
+        </div>
+    </div>
+</section>
+<section class="section">
+    <div class="container row align-items-center g-5">
+        <div class="col-lg-5">
+            <p class="eyebrow">APRENDER HACIENDO</p>
+            <h2 class="section-title">Cada resultado cuenta su propia historia.</h2>
+            <p class="text-secondary">Las calculadoras no se limitan al valor final: muestran datos, fórmula,
+                sustitución, desarrollo, resultado y una lectura aplicada.</p>
+        </div>
+        <div class="col-lg-7">
+            <ol class="numbered">
+                <li><b>Datos</b><span>Define función, punto, región o campo.</span></li>
+                <li><b>Fórmula</b><span>La plataforma plantea el método apropiado.</span></li>
+                <li><b>Procedimiento</b><span>SymPy desarrolla y conserva los pasos esenciales.</span></li>
+                <li><b>Interpretación</b><span>Conecta el resultado con una situación de ingeniería.</span></li>
+            </ol>
+        </div>
+    </div>
+</section>
 {% endblock %}
