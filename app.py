@@ -10,7 +10,7 @@ from modules import unidad1, unidad2, unidad3
 from modules.common import MathInputError, make_surface, safe_expr
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "TU_API_KEY_AQUI"))
-modelo_ia = genai.GenerativeModel('gemini-1.5-flash')
+modelo_ia = genai.GenerativeModel('gemini-pro')
 
 
 app = Flask(__name__)
