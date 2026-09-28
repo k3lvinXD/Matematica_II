@@ -85,6 +85,8 @@ def calculate():
             explicacion_ia = modelo_ia.generate_content(prompt).text
             answer["ai_explanation"] = explicacion_ia
         except Exception as e:
+            # Imprimimos el error en la consola del servidor para saber qué pasó
+            print(f"Error de IA: {e}") 
             # Si la IA falla, la app sigue funcionando
             answer["ai_explanation"] = "Explicación de IA no disponible en este momento."
         return jsonify(answer)
