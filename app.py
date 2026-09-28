@@ -3,8 +3,14 @@ from __future__ import annotations
 
 from flask import Flask, jsonify, render_template, request
 
+import os 
+import google.generativeai as genai
+
 from modules import unidad1, unidad2, unidad3
 from modules.common import MathInputError, make_surface, safe_expr
+
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "TU_API_KEY_AQUI"))
+modelo_ia = genai.GenerativeModel('gemini-1.5-flash')
 
 
 app = Flask(__name__)
@@ -61,6 +67,26 @@ def calculate():
             answer = unidad3.solve(operation, expression, params)
         else:
             raise MathInputError("Selecciona una herramienta matemática válida.")
+        try:
+            # Extraemos los pasos matemáticos generados por SymPy para dárselos de contexto
+            pasos_texto = "\n".join([f"- {paso.get('title', '')}: {paso.get('latex', '')}" for paso in answer.get('steps', [])])
+            
+            prompt = f"""
+            Eres un profesor experto en Cálculo de Varias Variables para estudiantes de ingeniería.
+            Explica este procedimiento paso a paso de forma didáctica, breve y clara.
+            Tema: {answer.get('title')}
+            Contexto físico/ingeniería: {answer.get('engineering', 'No aplica')}
+            Pasos matemáticos ya resueltos:
+            {pasos_texto}
+            Resultado final: {answer.get('result_latex')}
+            
+            Redacta solo la explicación sin repetir las ecuaciones en crudo, enfócate en el 'por qué' de cada paso.
+            """
+            explicacion_ia = modelo_ia.generate_content(prompt).text
+            answer["ai_explanation"] = explicacion_ia
+        except Exception as e:
+            # Si la IA falla, la app sigue funcionando
+            answer["ai_explanation"] = "Explicación de IA no disponible en este momento."
         return jsonify(answer)
     except MathInputError as exc:
         return jsonify(error=str(exc)), 400
