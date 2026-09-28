@@ -14,12 +14,30 @@ def _point(params: dict) -> tuple[sp.Expr, sp.Expr]:
 
 def partials(expression: str, params: dict):
     f = safe_expr(expression)
-    fx, fy = sp.diff(f, x), sp.diff(f, y)
-    fxx, fyy, fxy, fyx = sp.diff(fx, x), sp.diff(fy, y), sp.diff(fx, y), sp.diff(fy, x)
-    steps = [step("Función", f), step("Derivada parcial respecto a x", fx),
-             step("Derivada parcial respecto a y", fy), step("Derivada mixta fxy", fxy),
-             step("Derivada mixta fyx", fyx)]
-    note = "Las derivadas mixtas coinciden: se cumple el teorema de Schwarz." if sp.simplify(fxy-fyx) == 0 else "Las derivadas mixtas no coinciden en esta expresión."
+    
+    # 1. Creamos el planteamiento (no evaluado)
+    df_dx = sp.Derivative(f, x)
+    df_dy = sp.Derivative(f, y)
+    
+    # 2. Calculamos el resultado real con .doit()
+    fx, fy = df_dx.doit(), df_dy.doit()
+    
+    # 3. Derivadas de segundo orden
+    fxx, fyy = sp.diff(fx, x), sp.diff(fy, y)
+    fxy, fyx = sp.diff(fx, y), sp.diff(fy, x)
+    
+    # 4. Desglosamos el planteamiento y el resultado
+    steps = [
+        step("Función original", f),
+        step("Planteamiento respecto a x", df_dx),
+        step("Derivada parcial fx", fx),
+        step("Planteamiento respecto a y", df_dy),
+        step("Derivada parcial fy", fy),
+        step("Derivada mixta fxy", fxy),
+        step("Derivada mixta fyx", fyx)
+    ]
+    
+    note = "Las derivadas mixtas coinciden: se cumple el teorema de Schwarz." if sp.simplify(fxy-fyx) == 0 else "Las derivadas mixtas no coinciden."
     return response("Derivadas parciales", sp.Matrix([fx, fy]), steps, note,
                     "Las tasas parciales modelan cómo cambia una magnitud de ingeniería al variar una variable y mantener la otra fija.", make_surface(f))
 

@@ -62,29 +62,34 @@ def calculate():
             answer = unidad3.solve(operation, expression, params)
         else:
             raise MathInputError("Selecciona una herramienta matemática válida.")
+       # --- NUEVO BLOQUE: EXPLICACIÓN BASADA EN REGLAS (CON MATEMÁTICAS) ---
         try:
             tema = answer.get('title', 'este cálculo')
             pasos = answer.get('steps', [])
             
-            explicacion = f"Para resolver **{tema}**, el motor matemático desarrolló {len(pasos)} pasos analíticos:\n\n"
+            explicacion = f"Para resolver **{tema}**, el sistema estructuró {len(pasos)} pasos analíticos:\n\n"
             
             for i, paso in enumerate(pasos):
                 titulo_paso = paso.get("title", "")
+                latex_paso = paso.get("latex", "")
                 nota_paso = paso.get("note", "")
                 
-                explicacion += f"**{i+1}. {titulo_paso}:** Este paso se extrae de la expresión matemática."
+                # Inyectamos la variable matemática envuelta en delimitadores LaTeX
+                explicacion += f"**Paso {i+1} ({titulo_paso}):** La expresión resultante es \\( {latex_paso} \\)."
+                
                 if nota_paso:
-                    explicacion += f" {nota_paso}"
+                    explicacion += f" *Nota: {nota_paso}*"
                 explicacion += "\n"
                 
-            explicacion += f"\n**Conclusión del cálculo:**\n{answer.get('interpretation', 'El resultado muestra la solución exacta del modelo.')}\n\n"
-            explicacion += f"**Sentido físico e ingenieril:**\n{answer.get('engineering', 'Se aplica directamente a los parámetros de diseño del problema.')}"
+            explicacion += f"\n**Conclusión matemática:** {answer.get('interpretation', '')}\n"
+            explicacion += f"**Aplicación en ingeniería:** {answer.get('engineering', '')}"
             
             answer["ai_explanation"] = explicacion
             
         except Exception as e:
             print(f"Error en generador local: {e}")
             answer["ai_explanation"] = "Explicación local no disponible."
+        # -------------------------------------
         return jsonify(answer)
     except MathInputError as exc:
         return jsonify(error=str(exc)), 400
