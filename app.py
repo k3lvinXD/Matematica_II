@@ -11,7 +11,7 @@ from modules.common import MathInputError, make_surface, safe_expr
 
 cliente_openrouter = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ.get("OPENROUTER_API_KEY")),
+    api_key=os.environ.get("OPENROUTER_API_KEY"))
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
