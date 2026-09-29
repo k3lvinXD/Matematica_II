@@ -4,14 +4,9 @@ from __future__ import annotations
 from flask import Flask, jsonify, render_template, request
 
 import os 
-from openai import OpenAI
 
 from modules import unidad1, unidad2, unidad3
 from modules.common import MathInputError, make_surface, safe_expr
-
-cliente_openrouter = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ.get("OPENROUTER_API_KEY"))
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
@@ -67,38 +62,34 @@ def calculate():
             answer = unidad3.solve(operation, expression, params)
         else:
             raise MathInputError("Selecciona una herramienta matemática válida.")
-# --- BLOQUE DE IA CON OPENROUTER ---
+# --- NUEVO BLOQUE: EXPLICACIÓN BASADA EN REGLAS (CON MATEMÁTICAS) ---
         try:
-            pasos_texto = "\n".join([f"- {paso.get('title', '')}: {paso.get('latex', '')}" for paso in answer.get('steps', [])])
+            tema = answer.get('title', 'este cálculo')
+            pasos = answer.get('steps', [])
             
-            prompt = f"""
-            Eres un profesor experto en Cálculo de Varias Variables para estudiantes de ingeniería.
-            Explica este procedimiento paso a paso de forma didáctica, breve y clara.
-            Tema: {answer.get('title')}
-            Contexto físico/ingeniería: {answer.get('engineering', 'No aplica')}
-            Pasos matemáticos ya resueltos:
-            {pasos_texto}
-            Resultado final: {answer.get('result_latex')}
+            explicacion = f"Para resolver **{tema}**, el sistema estructuró {len(pasos)} pasos analíticos:\n\n"
             
-            Redacta solo la explicación sin repetir las ecuaciones en crudo, enfócate en el 'por qué' de cada paso.
-            """
+            for i, paso in enumerate(pasos):
+                titulo_paso = paso.get("title", "")
+                latex_paso = paso.get("latex", "")
+                nota_paso = paso.get("note", "")
+                
+                # Inyectamos la variable matemática envuelta en delimitadores LaTeX
+                explicacion += f"**Paso {i+1} ({titulo_paso}):** La expresión resultante es \\( {latex_paso} \\)."
+                
+                if nota_paso:
+                    explicacion += f" *Nota: {nota_paso}*"
+                explicacion += "\n"
+                
+            explicacion += f"\n**Conclusión matemática:** {answer.get('interpretation', '')}\n"
+            explicacion += f"**Aplicación en ingeniería:** {answer.get('engineering', '')}"
             
-            respuesta_chat = cliente_openrouter.chat.completions.create(
-                model="meta-llama/llama-3.1-8b-instruct:free", # Modelo gratuito y actualizado
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ]
-            )
-            
-            answer["ai_explanation"] = respuesta_chat.choices[0].message.content
+            answer["ai_explanation"] = explicacion
             
         except Exception as e:
-            print(f"Error de IA (OpenRouter): {e}")
-            answer["ai_explanation"] = "Explicación de IA no disponible en este momento."
-        # -----------------------------------
+            print(f"Error en generador local: {e}")
+            answer["ai_explanation"] = "Explicación local no disponible."
+        # -------------------------------------
         return jsonify(answer)
     except MathInputError as exc:
         return jsonify(error=str(exc)), 400
