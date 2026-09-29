@@ -4,12 +4,14 @@ from __future__ import annotations
 from flask import Flask, jsonify, render_template, request
 
 import os 
-from groq import Groq
+from openai import OpenAI
 
 from modules import unidad1, unidad2, unidad3
 from modules.common import MathInputError, make_surface, safe_expr
 
-cliente_groq = Groq(api_key=os.environ.get("GROQ_API_KEY", "TU_API_KEY_AQUI"))
+cliente_openrouter = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.environ.get("OPENROUTER_API_KEY"),
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
@@ -65,7 +67,7 @@ def calculate():
             answer = unidad3.solve(operation, expression, params)
         else:
             raise MathInputError("Selecciona una herramienta matemática válida.")
-# --- NUEVO BLOQUE: LLAMADA A LA IA CON GROQ ---
+# --- BLOQUE DE IA CON OPENROUTER ---
         try:
             pasos_texto = "\n".join([f"- {paso.get('title', '')}: {paso.get('latex', '')}" for paso in answer.get('steps', [])])
             
@@ -81,23 +83,22 @@ def calculate():
             Redacta solo la explicación sin repetir las ecuaciones en crudo, enfócate en el 'por qué' de cada paso.
             """
             
-            # Llamada a la API de Groq usando Llama 3
-            respuesta_chat = cliente_groq.chat.completions.create(
+            respuesta_chat = cliente_openrouter.chat.completions.create(
+                model="meta-llama/llama-3.1-8b-instruct:free", # Modelo gratuito y actualizado
                 messages=[
                     {
                         "role": "user",
                         "content": prompt,
                     }
-                ],
-                model="llama-3.1-8b-instant", # Modelo de código abierto rápido y gratuito
+                ]
             )
             
             answer["ai_explanation"] = respuesta_chat.choices[0].message.content
             
         except Exception as e:
-            print(f"Error de IA (Groq): {e}")
+            print(f"Error de IA (OpenRouter): {e}")
             answer["ai_explanation"] = "Explicación de IA no disponible en este momento."
-        # -------------------------------------
+        # -----------------------------------
         return jsonify(answer)
     except MathInputError as exc:
         return jsonify(error=str(exc)), 400
