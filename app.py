@@ -89,7 +89,7 @@ def calculate():
                         "content": prompt,
                     }
                 ],
-                model="llama3-8b-8192", # Modelo de código abierto rápido y gratuito
+                model="llama-3.1-8b-instant", # Modelo de código abierto rápido y gratuito
             )
             
             answer["ai_explanation"] = respuesta_chat.choices[0].message.content
