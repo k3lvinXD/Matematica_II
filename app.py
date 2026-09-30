@@ -87,7 +87,7 @@ def calculate():
             
             # Llamada al modelo Command R de Cohere
             respuesta_chat = cliente_cohere.chat(
-                model="command",
+                model="command-r-08-2024",
                 message=prompt,
                 temperature=0.1
             )
