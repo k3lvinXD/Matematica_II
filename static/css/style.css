@@ -769,3 +769,21 @@ body {
     color: var(--ink);
     /* Resalta las palabras clave en un tono más oscuro */
 }
+
+/* Evita que ecuaciones largas se salgan de la tarjeta */
+.ai-explanation,
+.step-card,
+#ai-explanation-content {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+/* Ajuste para contenedores de MathJax/KaTeX */
+.MathJax_Display,
+.mjx-chtml,
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    padding: 8px 0;
+}

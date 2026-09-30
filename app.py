@@ -74,15 +74,19 @@ def calculate():
             funcion_inicial = pasos[0].get('latex', '') if pasos else 'la función dada'
             
             prompt = f"""
-            Eres un motor de resolución matemática paso a paso. 
-            Resuelve: {tema}
-            Expresión inicial: {funcion_inicial}
-            Resultado final al que DEBES llegar: {resultado_final}
+            Eres un profesor de cálculo multivariable claro y conciso.
+            Explica la resolución de: {tema}
+            Función inicial: {funcion_inicial}
+            Resultado final exacto: {resultado_final}
+
+            REGLAS STRICTAS DE FORMATO Y MATEMÁTICA:
+            1. Tratamiento directo de variables: Si derivas respecto a 'x', trata a 'y' como una constante directamente (ej: d/dx(y) = 0). NO escribas derivadas implícitas ni cadenas innecesarias como dy/dx.
+            2. Formato LaTeX: Para ecuaciones inline dentro de texto usa EXCLUSIVAMENTE \\( ... \\). NUNCA uses el símbolo de dólar ($).
+            3. Ecuaciones en bloque: Para fórmulas centradas usa \\[ ... \\]. Divide expresiones muy largas en pasos cortos para que quepan en pantalla.
             
-            Genera los pasos algebraicos intermedios que faltan (regla de la cadena, sumas, simplificaciones).
-            Usa este formato estricto:
-            **Paso 1:** [Desarrollo matemático usando \\( \\) para LaTeX inline]
-            **Paso 2:** [Siguiente paso...]
+            Estructura la respuesta así:
+            **Paso 1:** [Explicación y desarrollo simple]
+            **Paso 2:** [Siguiente desarrollo]
             """
             
             # Llamada al modelo Command R de Cohere
