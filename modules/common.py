@@ -70,7 +70,7 @@ def number(params: dict[str, Any], key: str, default: float | None = None) -> sp
 
 
 def latex(value: Any) -> str:
-    return sp.latex(sp.simplify(value))
+    return sp.latex(value)
 
 
 def decimal(value: Any) -> str:
