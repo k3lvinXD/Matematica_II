@@ -88,19 +88,27 @@ def calculate():
                 formula = p.get('latex', '')
                 contexto_sympy += f"- {titulo}: \\( {formula} \\)\n"
 
-            # 2. Prompt restrictivo: La IA solo redacta texto, no calcula.
+           # 2. Prompt calibrado: Desarrollo algebraico anclado a resultados exactos
             prompt = f"""
-            Eres un tutor de Cálculo Universitario. Tu única tarea es redactar una explicación en lenguaje natural que una los siguientes pasos matemáticos. 
+            Eres un tutor de Cálculo Universitario desarrollando el procedimiento para: {tema}
             
-            TEMA: {tema}
-            PROCEDIMIENTO MATEMÁTICO EXACTO:
+            RESULTADOS EXACTOS DEL MOTOR (DEBES LLEGAR A ESTOS):
             {contexto_sympy}
 
+            TAREA:
+            Escribe la explicación paso a paso mostrando el desarrollo algebraico intermedio detallado para llegar a cada uno de esos resultados.
+            
             REGLAS ESTRICTAS E INQUEBRANTABLES:
-            1. NO INVENTES NI CALCULES NADA. Usa EXCLUSIVAMENTE las ecuaciones del "PROCEDIMIENTO MATEMÁTICO EXACTO".
-            2. Tu trabajo es explicar con palabras (ej. "Aplicamos la regla de la cadena", "Evaluamos la integral interna") qué ocurrió en cada paso listado arriba.
-            3. Estructura tu respuesta enumerando los pasos: **Paso 1:** [Explicación textual] -> [Fórmula exacta].
-            4. NUNCA uses el símbolo de dólar ($). Usa \\( ... \\) para las ecuaciones.
+            1. Muestra la aplicación de reglas matemáticas (cadena, producto, sumas) término por término ANTES de dar la respuesta final del paso.
+            2. Tu desarrollo intermedio DEBE desembocar EXACTAMENTE en los resultados provistos por el motor. No inventes variables adicionales.
+            3. Si derivas parcialmente respecto a una variable, trata a las demás estrictamente como constantes fijas desde el primer momento.
+            4. NUNCA uses el símbolo de dólar ($). Usa \\( ... \\) para fórmulas en la misma línea y \\[ ... \\] para fórmulas centradas.
+            5. INICIA DIRECTAMENTE CON EL PASO 1. Cero saludos, cero introducciones, no digas "Por supuesto" ni "Aquí tienes".
+
+            Estructura cada paso estrictamente así:
+            **Paso 1 ([Nombre de la operación]):** [Breve explicación textual]
+            \\[ [Desarrollo algebraico intermedio mostrando la regla aplicada] \\]
+            \\[ [Resultado final de este paso que coincida con el motor] \\]
             """
             
             respuesta_chat = cliente_cohere.chat(
