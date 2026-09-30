@@ -4,9 +4,13 @@ from __future__ import annotations
 from flask import Flask, jsonify, render_template, request
 
 import os 
+import cohere
 
 from modules import unidad1, unidad2, unidad3
 from modules.common import MathInputError, make_surface, safe_expr
+
+# Inicialización limpia de Cohere
+cliente_cohere = cohere.Client(os.environ.get("COHERE_API_KEY"))
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
@@ -62,34 +66,38 @@ def calculate():
             answer = unidad3.solve(operation, expression, params)
         else:
             raise MathInputError("Selecciona una herramienta matemática válida.")
-# --- NUEVO BLOQUE: EXPLICACIÓN BASADA EN REGLAS (CON MATEMÁTICAS) ---
+# --- BLOQUE IA: COHERE (MODO SYMBOLAB) ---
         try:
             tema = answer.get('title', 'este cálculo')
+            resultado_final = answer.get('result_latex', '')
             pasos = answer.get('steps', [])
+            funcion_inicial = pasos[0].get('latex', '') if pasos else 'la función dada'
             
-            explicacion = f"Para resolver **{tema}**, el sistema estructuró {len(pasos)} pasos analíticos:\n\n"
+            prompt = f"""
+            Eres un motor de resolución matemática paso a paso. 
+            Resuelve: {tema}
+            Expresión inicial: {funcion_inicial}
+            Resultado final al que DEBES llegar: {resultado_final}
             
-            for i, paso in enumerate(pasos):
-                titulo_paso = paso.get("title", "")
-                latex_paso = paso.get("latex", "")
-                nota_paso = paso.get("note", "")
-                
-                # Inyectamos la variable matemática envuelta en delimitadores LaTeX
-                explicacion += f"**Paso {i+1} ({titulo_paso}):** La expresión resultante es \\( {latex_paso} \\)."
-                
-                if nota_paso:
-                    explicacion += f" *Nota: {nota_paso}*"
-                explicacion += "\n"
-                
-            explicacion += f"\n**Conclusión matemática:** {answer.get('interpretation', '')}\n"
-            explicacion += f"**Aplicación en ingeniería:** {answer.get('engineering', '')}"
+            Genera los pasos algebraicos intermedios que faltan (regla de la cadena, sumas, simplificaciones).
+            Usa este formato estricto:
+            **Paso 1:** [Desarrollo matemático usando \\( \\) para LaTeX inline]
+            **Paso 2:** [Siguiente paso...]
+            """
             
-            answer["ai_explanation"] = explicacion
+            # Llamada al modelo Command R de Cohere
+            respuesta_chat = cliente_cohere.chat(
+                model="command-r",
+                message=prompt,
+                temperature=0.1
+            )
+            
+            answer["ai_explanation"] = respuesta_chat.text
             
         except Exception as e:
-            print(f"Error en generador local: {e}")
-            answer["ai_explanation"] = "Explicación local no disponible."
-        # -------------------------------------
+            print(f"Error en Cohere: {e}", flush=True)
+            answer["ai_explanation"] = "El resultado está listo, pero el desglose paso a paso no se pudo generar por un error de red."
+        # -----------------------------------------
         return jsonify(answer)
     except MathInputError as exc:
         return jsonify(error=str(exc)), 400
