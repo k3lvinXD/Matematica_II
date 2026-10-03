@@ -27,7 +27,7 @@ gemini_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=gemini_key)
 
 # Configurar el modelo (gemini-1.5-pro es ideal para razonamiento matemático)
-modelo_gemini = genai.GenerativeModel('gemini-3.8-flash')
+modelo_gemini = genai.GenerativeModel('gemini-3.1-flash-lite')
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
