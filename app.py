@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from flask import Flask, jsonify, render_template, request
 
+from dotenv import load_dotenv
+
 import os 
-import cohere
+import google.generativeai as genai
 import re
 
 def formatear_latex_ia(texto: str) -> str:
@@ -19,8 +21,13 @@ from modules import unidad1, unidad2, unidad3
 from modules.common import MathInputError, make_surface, safe_expr
 
 
-# Inicialización limpia de Cohere
-cliente_cohere = cohere.Client(os.environ.get("COHERE_API_KEY"))
+# Cargar variables e inicializar Gemini
+load_dotenv()
+gemini_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=gemini_key)
+
+# Configurar el modelo (gemini-1.5-pro es ideal para razonamiento matemático)
+modelo_gemini = genai.GenerativeModel('gemini-3.8-flash')
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
@@ -111,17 +118,18 @@ def calculate():
             \\[ [Resultado final de este paso que coincida con el motor] \\]
             """
             
-            respuesta_chat = cliente_cohere.chat(
-                model="command-r-08-2024",
-                message=prompt,
-                temperature=0.0 # Temperatura en 0 para máxima precisión y cero creatividad
+            respuesta_chat = modelo_gemini.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.0
             )
+        )
             
             # Sanitizamos el texto antes de enviarlo al Frontend
             answer["ai_explanation"] = formatear_latex_ia(respuesta_chat.text)
             
         except Exception as e:
-            print(f"Error en Cohere: {e}", flush=True)
+            print(f"Error en Gemini: {e}", flush=True)
             answer["ai_explanation"] = "El resultado está listo, pero el texto explicativo no se pudo generar."
         # -----------------------------------------
         return jsonify(answer)

@@ -781,9 +781,10 @@ body {
 /* Ajuste para contenedores de MathJax/KaTeX */
 .MathJax_Display,
 .mjx-chtml,
-.katex-display {
-    overflow-x: auto;
-    overflow-y: hidden;
+.katex-display,
+mjx-container {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
     max-width: 100%;
     padding: 8px 0;
 }
