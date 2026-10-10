@@ -1,6 +1,6 @@
 # Matemática II Interactiva
 
-Plataforma web educativa para el Proyecto Integrador de **Matemática II (AC2208)** de la UNI. Integra cálculo diferencial de funciones de varias variables, cálculo integral multivariable y análisis vectorial en un flujo único:
+Plataforma web educativa para el Proyecto Integrador de **Matemática II ** de la UNI. Integra cálculo diferencial de funciones de varias variables, cálculo integral multivariable y análisis vectorial en un flujo único:
 
 `Problema → modelo matemático → desarrollo → gráfica → interpretación → aplicación de ingeniería`
 
