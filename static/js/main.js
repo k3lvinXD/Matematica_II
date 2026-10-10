@@ -6,6 +6,7 @@ function latexToSympy(value) {
   let text = value || "";
   text = text.replace(/\\left|\\right/g, "").replace(/\\cdot|\\times/g, "*");
   text = text.replace(/\\pi/g, "pi").replace(/\\theta/g, "theta").replace(/\\rho/g, "rho").replace(/\\phi/g, "phi");
+  text = text.replace(/\\sin\^\{-1\}/g, "asin").replace(/\\cos\^\{-1\}/g, "acos").replace(/\\tan\^\{-1\}/g, "atan");
   text = text.replace(/\\sin|\\cos|\\tan|\\sqrt|\\log|\\exp/g, m => m.slice(1));
   // MathLive gives standard LaTeX. Repeated replacement covers simple nested fractions.
   for (let i = 0; i < 4; i += 1) text = text.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "($1)/($2)");
