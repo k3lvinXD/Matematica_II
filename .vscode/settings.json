@@ -4,5 +4,6 @@
   "editor.formatOnSave": true,
   "files.exclude": {
     "**/__pycache__": true
-  }
+  },
+  "python.terminal.useEnvFile": true
 }

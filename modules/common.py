@@ -19,7 +19,7 @@ SYMBOLS = {v.name: v for v in (x, y, z, t, r, theta, phi, rho, lam)}
 SAFE_FUNCTIONS = {
     "sin": sp.sin, "cos": sp.cos, "tan": sp.tan, "asin": sp.asin, "acos": sp.acos,
     "atan": sp.atan, "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt, "abs": sp.Abs,
-    "pi": sp.pi, "E": sp.E,
+    "pi": sp.pi, "E": sp.E, "e" : sp.E
 }
 SAFE_LOCALS = {**SYMBOLS, **SAFE_FUNCTIONS}
 TRANSFORMS = standard_transformations + (convert_xor, implicit_multiplication_application)
@@ -32,10 +32,49 @@ SAFE_GLOBALS = {
     "__builtins__": {}, "Integer": sp.Integer, "Float": sp.Float,
     "Rational": sp.Rational, "Symbol": sp.Symbol, "Function": sp.Function,
 }
+KNOWN_WORDS = tuple(sorted(SAFE_LOCALS, key=len, reverse=True))
 
 
 class MathInputError(ValueError):
     """Error de entrada traducible a un mensaje amigable para la interfaz."""
+
+def _split_math_word(word: str) -> list[str] | None:
+    """Separa xsin en x, sin de forma segura."""
+    if word in SAFE_LOCALS:
+        return [word]
+
+    def divide(position: int) -> list[str] | None:
+        if position == len(word):
+            return []
+
+        for item in KNOWN_WORDS:
+            if word.startswith(item, position):
+                remaining = divide(position + len(item))
+                if remaining is not None:
+                    return [item, *remaining]
+        return None
+
+    pieces = divide(0)
+    return pieces if pieces and len(pieces) > 1 else None
+
+
+def normalize_math_notation(text: str) -> str:
+    """Convierte 2xsin(x), xy y xpi en productos explícitos."""
+    def replace_word(match: re.Match[str]) -> str:
+        word = match.group(0)
+        pieces = _split_math_word(word)
+
+        if pieces is None:
+            if word in SAFE_LOCALS:
+                return word
+            raise MathInputError(
+                "Usa solo variables x, y, z, t, r, theta, phi, rho "
+                "y funciones matemáticas admitidas."
+            )
+
+        return "*".join(pieces)
+
+    return IDENTIFIER.sub(replace_word, text)
 
 
 def safe_expr(text: str) -> sp.Expr:
@@ -45,10 +84,9 @@ def safe_expr(text: str) -> sp.Expr:
         raise MathInputError("La expresión está vacía.")
     if len(text) > 240 or not ALLOWED_CHARACTERS.fullmatch(text):
         raise MathInputError("La expresión contiene símbolos no admitidos.")
-    names = set(IDENTIFIER.findall(text))
-    allowed = set(SAFE_LOCALS) | {"e"}
-    if any(name not in allowed for name in names):
-        raise MathInputError("Usa solo variables x, y, z, t, r, theta, phi, rho y funciones matemáticas admitidas.")
+    text = normalize_math_notation(text)
+    if len(text) > 240 or not ALLOWED_CHARACTERS.fullmatch(text):
+             raise MathInputError("La expresión contiene símbolos no admitidos.")
     try:
         parsed = parse_expr(text.replace("^", "**"), local_dict=SAFE_LOCALS,
                             global_dict=SAFE_GLOBALS, transformations=TRANSFORMS,
