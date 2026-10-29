@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% from 'assistant_panel.html' import assistant_panel %}
+{% block title %}JARVIS · Asistente de Matemática II{% endblock %}
+{% block content %}
+<div class="jarvis-space"><div class="jarvis-layout">
+  <aside class="jarvis-intro"><span class="jarvis-label">INTERFAZ DE APRENDIZAJE / 01</span><h1>Una pregunta.<br><span>Otra perspectiva.</span></h1><p>Tu compañero de Matemática II, ahora con conversación, personalidad y voz.</p>
+  <div class="jarvis-reactor" aria-hidden="true"><div class="jarvis-ring"></div><div class="jarvis-ring inner"></div><div class="jarvis-core">∇</div></div>
+  <div class="jarvis-spec"><span>01 / CONVERSA</span><p>Pregunta, pide una pista o continúa una explicación.</p><span>02 / CONECTA</span><p>Desde una calculadora, pulsa “Preguntar al asistente” para incluir sus datos.</p><span>03 / PERSONALIZA</span><p>Elige un avatar, carga tu sprite y selecciona una voz.</p></div><p class="jarvis-note">Modo visual inspirado en asistentes de ciencia ficción. Usa las voces disponibles en tu dispositivo.</p></aside>
+  {{ assistant_panel(true) }}
+</div></div>
+{% endblock %}

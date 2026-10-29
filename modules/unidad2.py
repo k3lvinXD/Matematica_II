@@ -13,12 +13,44 @@ def _bounds(params: dict, variable: str) -> tuple[sp.Expr, sp.Expr]:
 
 
 def double_integral(expression: str, params: dict):
-    f = safe_expr(expression); xa, xb = _bounds(params, "x"); ya, yb = _bounds(params, "y")
-    first = sp.integrate(f, (x, xa, xb)); result = sp.simplify(sp.integrate(first, (y, ya, yb)))
-    integral = sp.Integral(f, (x, xa, xb), (y, ya, yb))
-    return response("Integral doble", result, [step("Integral planteada", integral), step("Primera integración en x", first), step("Segunda integración en y", result)],
-                    "La integral doble acumula la contribución de una magnitud sobre una región plana.",
-                    "Puede calcular masa de una lámina, carga total, energía distribuida o temperatura promedio.", make_surface(f))
+    f = safe_expr(expression)
+    if not f.free_symbols <= {x, y}:
+        raise MathInputError("El integrando debe depender solo de x e y.")
+    order = params.get("order", "xy")
+    if order not in ("xy", "yx"):
+        raise MathInputError("Elige el orden xy o yx.")
+    inner, outer = (x, y) if order == "xy" else (y, x)
+    low, high = _bounds(params, str(inner))
+    a, b = _bounds(params, str(outer))
+    if any(v.free_symbols or v.is_real is not True or v.is_finite is not True for v in (a, b)):
+        raise MathInputError("Los límites exteriores deben ser constantes reales finitas.")
+    if (b - a).is_positive is not True:
+        raise MathInputError("El límite exterior inferior debe ser menor que el superior.")
+    if any(not v.free_symbols <= {outer} for v in (low, high)):
+        raise MathInputError("Los límites interiores solo pueden depender de la variable exterior.")
+    width = sp.simplify(high - low)
+    # La validación exacta por extremos solo se aplica a cotas afines.
+    affine = all(v.is_polynomial(outer) and sp.diff(v, outer, 2) == 0 for v in (low, high))
+    if affine and any(width.subs(outer, q).is_nonnegative is not True for q in (a, b)):
+        raise MathInputError("La cota interior inferior supera a la superior.")
+    primitive = sp.integrate(f, inner)
+    first = sp.integrate(f, (inner, low, high))
+    result = sp.simplify(sp.integrate(first, (outer, a, b)))
+    integral = sp.Integral(f, (inner, low, high), (outer, a, b))
+    residual = sp.simplify(sp.diff(primitive, inner) - f)
+    steps = [step("Integral planteada", integral),
+             step(f"Antiderivada respecto a {inner}", primitive, f"Se mantiene {outer} constante."),
+             step("Comprobación de la antiderivada", residual, "Un residuo cero comprueba esta antiderivada, no la existencia de toda integral impropia."),
+             step("Evaluación de límites interiores", first), step(f"Integración exterior en {outer}", result)]
+    answer = response("Integral doble", result, steps,
+                      "Acumulación sobre la región definida por los límites y el orden elegidos.",
+                      "Permite calcular masa, carga o energía distribuida.", make_surface(f))
+    answer["warnings"] = []
+    if not affine:
+        answer["warnings"].append("No se certificó el orden de las cotas no afines en todo el intervalo; revisa la región.")
+    if not f.is_polynomial(x, y):
+        answer["warnings"].append("Revisa dominio, singularidades y convergencia del integrando; el valor simbólico no certifica esas condiciones.")
+    return answer
 
 
 def triple_integral(expression: str, params: dict):

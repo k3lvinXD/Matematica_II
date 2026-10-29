@@ -1,0 +1,32 @@
+{% macro assistant_panel(full=false) %}
+<section id="math-assistant" class="ma-panel {% if full %}ma-full{% else %}ma-floating{% endif %}" data-assistant data-mode="{{ 'jarvis' if full else 'mentor' }}" aria-label="Asistente de Matemática II" {% if not full %}hidden{% endif %}>
+  <header class="ma-header">
+    <div class="ma-identity"><div class="ma-avatar" data-avatar-kind="orb" data-avatar aria-hidden="true"><svg class="ma-robot" viewBox="0 0 100 100"><path d="M50 13v12M43 13h14"/><rect x="15" y="25" width="70" height="58" rx="22"/><path d="M7 44v22M93 44v22"/><rect class="ma-eye" x="30" y="43" width="10" height="13" rx="5"/><rect class="ma-eye" x="60" y="43" width="10" height="13" rx="5"/><path class="ma-mouth" d="M36 68h28"/></svg><span class="ma-cat" aria-hidden="true">🐱</span><span class="ma-orb"></span></div><div><span class="ma-eyebrow">MATEMÁTICA II · ASISTENTE</span><h2 data-name>JARVIS</h2><p data-state>Listo para ayudarte</p></div></div>
+    <div class="ma-header-actions">{% if not full %}<a href="{{ url_for('assistant_page') }}" class="ma-icon" title="Abrir panel JARVIS" aria-label="Abrir panel JARVIS">↗</a><button type="button" class="ma-icon" data-close aria-label="Cerrar asistente">×</button>{% else %}<span class="ma-online">● TEXTO + VOZ</span>{% endif %}</div>
+  </header>
+  <div class="ma-tools"><button type="button" class="ma-customize" data-customize aria-controls="assistant-settings" aria-expanded="false">⚙ Personalizar sprite y voz</button><label>Estilo <select data-mode-select><option value="mentor">Tutor</option><option value="jarvis" {% if full %}selected{% endif %}>JARVIS</option></select></label><button type="button" data-clear>Nueva conversación</button><button type="button" data-stop-speech>Detener voz</button></div>
+  <details class="ma-settings" id="assistant-settings" data-settings><summary>Opciones de sprite y voz</summary>
+    <div class="ma-settings-grid">
+      <label>Nombre <input data-setting="name" maxlength="30" value="JARVIS"></label>
+      <label>Color <input data-setting="accent" type="color" value="#40ddc5"></label>
+      <label>Personaje <select data-setting="avatar"><option value="robot">Robot</option><option value="orb" selected>Núcleo luminoso</option><option value="cat">Gato explorador</option><option value="custom">Mi imagen / sprite</option></select></label>
+      <label>Imagen propia <input data-upload type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <label>Fotogramas por fila <input data-setting="frames" type="number" min="1" max="16" value="1"></label>
+      <label>Filas del sprite <select data-setting="rows"><option value="1">Una fila</option><option value="4">Cuatro estados</option></select></label>
+      <label>Tipo de voz <select data-setting="voiceEngine"><option value="browser">Español latinoamericano · navegador</option></select></label>
+      <label>Voz en español <select data-voice><option value="">Automática · prioridad latinoamericana</option></select></label>
+      <label class="ma-check"><input data-setting="autoSpeak" type="checkbox"> Hablar automáticamente al enviar y al responder</label>
+    </div>
+    <p>PNG, JPG o WebP, hasta 2 MB y 2048 × 2048 px. Una imagen usa 1 fotograma y 1 fila. En hojas de 4 filas: espera, escucha, pensamiento y habla. El avatar se guarda en este navegador y no se envía a la IA.</p>
+    <button type="button" data-test-voice>Probar voz</button>
+    <button type="button" data-reset-avatar>Restablecer avatar</button>
+  </details>
+  <div class="ma-context" data-context hidden><span data-context-label></span><button type="button" data-remove-context aria-label="Quitar contexto del ejercicio">×</button></div>
+  <div class="ma-log" data-log role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación"></div>
+  <div class="ma-prompts"><button type="button" data-prompt="Explícame qué representa el gradiente con un ejemplo sencillo.">Entender el gradiente</button><button type="button" data-prompt="¿Cómo elijo el orden de integración de una integral doble?">Elegir el orden</button><button type="button" data-prompt="Dame una pista para estudiar divergencia y rotacional.">Una pista para estudiar</button></div>
+  <p class="ma-status" data-status role="status"></p>
+  <form class="ma-composer" data-chat-form><label class="ma-sr" for="assistant-question">Tu pregunta</label><textarea id="assistant-question" data-question rows="2" maxlength="1500" placeholder="Escribe tu pregunta… Enter para enviar, Shift+Enter para otra línea." required></textarea><div class="ma-compose-actions"><button type="button" data-mic aria-pressed="false">🎙 Dictar</button><span data-count>0 / 1500</span><button type="submit" data-send>Enviar ↗</button></div></form>
+  <p class="ma-disclosure">Las preguntas se envían a Gemini. La lectura usa las voces disponibles en tu navegador, con prioridad latinoamericana. El dictado puede usar el servicio de voz de tu navegador. Las respuestas de IA son orientativas.</p>
+</section>
+{% endmacro %}
+

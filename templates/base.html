@@ -14,6 +14,7 @@
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <script type="module" src="https://unpkg.com/mathlive?module"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/assistant.css', v='jarvis-core-7') }}">
 </head>
 
 <body data-page="{{ active|default('inicio') }}">
@@ -42,6 +43,7 @@
               href="{{ url_for('ejercicios') }}">Ejercicios</a></li>
           <li class="nav-item"><a class="nav-link {% if active == 'aplicaciones' %}active{% endif %}"
               href="{{ url_for('aplicaciones') }}">Ingeniería</a></li>
+          <li class="nav-item"><a class="nav-link {% if active == 'asistente' %}active{% endif %}" href="{{ url_for('assistant_page') }}">JARVIS · Asistente</a></li>
           <li class="nav-item"><a class="nav-link {% if active == 'acerca' %}active{% endif %}"
               href="{{ url_for('acerca') }}">Acerca</a></li>
         </ul>
@@ -56,6 +58,8 @@
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-region"></div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% include 'assistant_widget.html' %}
+  <script defer src="{{ url_for('static', filename='js/assistant.js', v='jarvis-core-7') }}"></script>
 </body>
 
 </html>

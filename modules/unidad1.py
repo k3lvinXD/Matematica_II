@@ -3,13 +3,22 @@ from __future__ import annotations
 
 import sympy as sp
 
-from .common import MathInputError, latex, make_surface, number, response, safe_expr, step, x, y, z, t, lam
+from .common import MathInputError, latex, make_surface, tangent_plot, number, response, safe_expr, step, x, y, z, t, lam
 
 OPERATIONS = {"partials", "gradient", "directional", "tangent", "extrema", "lagrange", "exact", "chain", "jacobian", "limit"}
 
 
 def _point(params: dict) -> tuple[sp.Expr, sp.Expr]:
-    return number(params, "x0", 0), number(params, "y0", 0)
+    point = number(params, "x0", 0), number(params, "y0", 0)
+    if any(v.free_symbols or v.is_real is not True or v.is_finite is not True for v in point):
+        raise MathInputError("Las coordenadas del punto deben ser constantes reales finitas.")
+    return point
+
+
+def _finite_at_point(value):
+    if value.has(sp.zoo, sp.oo, -sp.oo, sp.nan) or (any(v.is_real is False for v in value) if hasattr(value, "rows") else value.is_real is False):
+        raise MathInputError("La función o sus derivadas no tienen valor real finito en ese punto.")
+    return value
 
 
 def partials(expression: str, params: dict):
@@ -19,7 +28,7 @@ def partials(expression: str, params: dict):
     steps = [step("Función", f), step("Derivada parcial respecto a x", fx),
              step("Derivada parcial respecto a y", fy), step("Derivada mixta fxy", fxy),
              step("Derivada mixta fyx", fyx)]
-    note = "Las derivadas mixtas coinciden: se cumple el teorema de Schwarz." if sp.simplify(fxy-fyx) == 0 else "Las derivadas mixtas no coinciden en esta expresión."
+    note = "Las derivadas mixtas calculadas coinciden. Schwarz requiere además continuidad de las segundas derivadas en un entorno del punto." if sp.simplify(fxy-fyx) == 0 else "Las derivadas mixtas no coinciden en esta expresión."
     return response("Derivadas parciales", sp.Matrix([fx, fy]), steps, note,
                     "Las tasas parciales modelan cómo cambia una magnitud de ingeniería al variar una variable y mantener la otra fija.", make_surface(f))
     
@@ -27,8 +36,8 @@ def partials(expression: str, params: dict):
 def gradient(expression: str, params: dict):
     f = safe_expr(expression); x0, y0 = _point(params)
     grad = sp.Matrix([sp.diff(f, x), sp.diff(f, y)])
-    at_point = grad.subs({x: x0, y: y0})
-    steps = [step("Función escalar", f), step("Gradiente", grad), step("Evaluación en el punto", at_point)]
+    at_point = _finite_at_point(grad.subs({x: x0, y: y0}))
+    steps = [step("Función escalar", f), step("Derivada respecto a x", grad[0], "Se mantiene y constante."), step("Derivada respecto a y", grad[1], "Se mantiene x constante."), step("Gradiente", grad), step("Evaluación en el punto", at_point)]
     return response("Vector gradiente", at_point, steps,
                     "El gradiente apunta hacia el máximo incremento local y su norma indica la rapidez de ese incremento.",
                     "En una superficie de temperatura, señala hacia dónde aumentar más rápidamente la temperatura.", make_surface(f))
@@ -42,7 +51,7 @@ def directional(expression: str, params: dict):
         raise MathInputError("El vector dirección no puede ser el vector cero.")
     unit = sp.simplify(direction / norm)
     grad = sp.Matrix([sp.diff(f, x), sp.diff(f, y)]).subs({x: x0, y: y0})
-    result = sp.simplify(grad.dot(unit))
+    result = _finite_at_point(sp.simplify(grad.dot(unit)))
     return response("Derivada direccional", result,
                     [step("Gradiente evaluado", grad), step("Vector unitario", unit), step("Producto punto ∇f·u", result)],
                     "La derivada direccional mide la tasa de cambio instantánea en la dirección elegida.",
@@ -53,8 +62,9 @@ def tangent(expression: str, params: dict):
     f = safe_expr(expression); x0, y0 = _point(params)
     z0 = sp.simplify(f.subs({x: x0, y: y0})); fx = sp.diff(f, x).subs({x: x0, y: y0}); fy = sp.diff(f, y).subs({x: x0, y: y0})
     plane = sp.expand(z0 + fx * (x - x0) + fy * (y - y0))
+    _finite_at_point(sp.Matrix([z0, fx, fy]))
     normal = sp.Matrix([-fx, -fy, 1])
-    plot = make_surface(f); plot.update({"kind": "tangent", "plane": make_surface(plane)["z"], "point": [float(x0), float(y0), float(z0)], "title": "Superficie y plano tangente"})
+    plot = tangent_plot(f, plane, x0, y0, z0)
     return response("Plano tangente", plane,
                     [step("Punto sobre la superficie", z0), step("Pendientes fx y fy", sp.Matrix([fx, fy])), step("Vector normal", normal), step("Plano tangente", plane)],
                     "El plano es la mejor aproximación lineal local de la superficie.",
@@ -62,27 +72,35 @@ def tangent(expression: str, params: dict):
 
 
 def extrema(expression: str, params: dict):
-    f = safe_expr(expression); fx, fy = sp.diff(f, x), sp.diff(f, y)
-    try:
-        points = sp.solve([fx, fy], [x, y], dict=True)
-    except Exception as exc:
-        raise MathInputError("No fue posible localizar los puntos críticos simbólicamente.") from exc
+    f = safe_expr(expression)
+    if not f.free_symbols <= {x, y}:
+        raise MathInputError("Para extremos locales usa una función de x e y.")
+    fx, fy = sp.diff(f, x), sp.diff(f, y)
+    points = [{}] if fx == 0 and fy == 0 else sp.solve([fx, fy], [x, y], dict=True)
+    points = [p for p in points if all(v.is_real is not False for v in p.values())]
     if not points:
-        raise MathInputError("No se encontraron puntos críticos reales con el método simbólico.")
-    fxx, fyy, fxy = sp.diff(fx, x), sp.diff(fy, y), sp.diff(fx, y)
-    classifications = []
+        raise MathInputError("No se localizaron puntos críticos reales con este método; no demuestra que no existan.")
+    hessian = sp.hessian(f, (x, y))
+    steps = [step("Ecuaciones críticas", sp.Matrix([fx, fy])), step("Hessiano", hessian)]
+    rows = []
     for point in points[:12]:
-        d = sp.simplify((fxx * fyy - fxy**2).subs(point))
-        xx = sp.simplify(fxx.subs(point))
-        if d.is_positive and xx.is_positive: label = "mínimo local"
-        elif d.is_positive and xx.is_negative: label = "máximo local"
-        elif d.is_negative: label = "punto silla"
-        else: label = "inconcluso"
-        classifications.append(f"{point}: {label}")
-    result = sp.Matrix([[p.get(x), p.get(y)] for p in points])
-    steps = [step("Ecuaciones críticas", sp.Matrix([fx, fy])), step("Hessiano", sp.Matrix([[fxx, fxy], [fxy, fyy]])),
-             {"title": "Clasificación", "latex": r"\\text{" + r";\\ ".join(classifications) + "}"}]
-    return response("Extremos locales", result, steps, "Se emplea el determinante D=fxx·fyy−fxy² para clasificar cada punto crítico.",
+        coords = [point.get(x, x), point.get(y, y)]
+        rows.append(coords)
+        family = set(point) != {x, y} or any(v.free_symbols for v in coords)
+        determinant = sp.simplify(hessian.det().subs(point))
+        xx = sp.simplify(hessian[0, 0].subs(point))
+        if family:
+            label = "Familia de puntos críticos: las variables que permanecen son libres. El criterio hessiano no clasifica la familia."
+        elif determinant.is_positive and xx.is_positive: label = "Mínimo local estricto."
+        elif determinant.is_positive and xx.is_negative: label = "Máximo local estricto."
+        elif determinant.is_negative: label = "Punto silla."
+        else: label = "Criterio hessiano inconcluso: se necesita otro análisis."
+        steps.append(step("Familia crítica" if family else "Punto crítico", sp.Matrix(coords), label))
+        steps.append(step("Determinante del Hessiano", determinant))
+    note = "Clasificación local en puntos donde la función es dos veces continuamente diferenciable; no determina extremos absolutos ni analiza el borde."
+    if len(points) > 12:
+        note += " Se muestran las primeras doce soluciones."
+    return response("Extremos locales", sp.Matrix(rows), steps, note,
                     "La optimización local ayuda a buscar máximos de rendimiento o mínimos de costo.", make_surface(f))
 
 
@@ -113,8 +131,8 @@ def exact(expression: str, params: dict):
     potential = sp.integrate(m, x)
     correction = sp.simplify(sp.integrate(n - sp.diff(potential, y), y))
     potential = sp.simplify(potential + correction)
-    return response("Diferencial exacta", potential, [step("M", m), step("N", n), step("Derivadas cruzadas", my), step("Función potencial Φ", potential)],
-                    "Existe una función potencial Φ cuya diferencial es Mdx+Ndy.", "Un potencial permite calcular trabajo o energía sin recorrer toda la trayectoria.")
+    return response("Potencial candidato de la diferencial", potential, [step("M", m), step("N", n), step("Derivadas cruzadas", my), step("Función potencial Φ", potential)],
+                    "La igualdad de derivadas cruzadas es un criterio local. Verifica las derivadas del potencial y un dominio donde sea diferenciable antes de concluir exactitud global.", "Un potencial permite calcular trabajo o energía sin recorrer toda la trayectoria.")
 
 
 def chain(expression: str, params: dict):
@@ -140,8 +158,8 @@ def limit(expression: str, params: dict):
     if variable is None:
         raise MathInputError("La variable del límite debe ser x, y, z o t.")
     result = sp.limit(f, variable, point)
-    return response("Límite", result, [step("Función", f), {"title": "Límite", "latex": r"\\lim_{" + latex(variable) + r"\\to" + latex(point) + "}" + latex(f)}, step("Resultado", result)],
-                    "El límite describe el comportamiento de la función al acercarse al punto.", "Sirve para comprobar estabilidad y continuidad de modelos locales.")
+    return response("Límite en una variable", result, [step("Función", f), {"title": "Límite", "latex": r"\\lim_{" + latex(variable) + r"\\to" + latex(point) + "}" + latex(f)}, step("Resultado", result)],
+                    "Se varía únicamente la variable seleccionada y se mantienen las demás fijas. No es una prueba de existencia de un límite multivariable.", "Sirve para comprobar estabilidad y continuidad de modelos locales.")
 
 
 HANDLERS = {name: globals()[name] for name in OPERATIONS}

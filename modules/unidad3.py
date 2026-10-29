@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sympy as sp
 
-from .common import MathInputError, latex, response, safe_expr, step, vector_components, vector_field_plot, x, y, z, t
+from .common import MathInputError, latex, response, safe_expr, step, vector_components, vector_field_plot, curve_plot, x, y, z, t
 
 OPERATIONS = {"vector_curve", "vector_field", "divergence", "curl", "laplacian", "line_integral", "conservative", "green"}
 
@@ -14,11 +14,7 @@ def _field(expression: str, dimensions: int = 2) -> list[sp.Expr]:
 
 def vector_curve(expression: str, params: dict):
     parts = _field(expression, 3); velocity = sp.Matrix([sp.diff(p, t) for p in parts]); acceleration = sp.Matrix([sp.diff(v, t) for v in velocity])
-    import numpy as np
-    values = np.linspace(-5, 5, 100)
-    funcs = [sp.lambdify(t, part, "numpy") for part in parts]
-    coordinates = [np.asarray(func(values), dtype=float).tolist() if np.asarray(func(values)).ndim else [float(func(v)) for v in values] for func in funcs]
-    plot = {"kind": "curve3d", "x": coordinates[0], "y": coordinates[1], "z": coordinates[2], "title": "Trayectoria vectorial r(t)"}
+    plot = curve_plot(parts)
     return response("Función vectorial", sp.Matrix(parts), [step("r(t)", sp.Matrix(parts)), step("Velocidad r′(t)", velocity), step("Aceleración r′′(t)", acceleration)],
                     "La derivada de la posición es velocidad; la segunda derivada es aceleración.", "Describe trayectorias de mecanismos, vehículos autónomos, partículas o robots.", plot)
 
@@ -30,7 +26,15 @@ def vector_field(expression: str, params: dict):
 
 
 def divergence(expression: str, params: dict):
-    parts = _field(expression, 2); terms = [sp.diff(parts[0], x), sp.diff(parts[1], y)]; result = sp.simplify(sum(terms))
+    dimensions = str(params.get("dimensions", len(expression.split(","))))
+    if dimensions not in ("2", "3"):
+        raise MathInputError("Selecciona dos o tres dimensiones.")
+    parts = _field(expression, int(dimensions))
+    variables = (x, y, z)[:len(parts)]
+    if any(not part.free_symbols <= set(variables) for part in parts):
+        raise MathInputError("Usa únicamente las variables correspondientes a la dimensión del campo.")
+    terms = [sp.diff(part, variable) for part, variable in zip(parts, variables)]
+    result = sp.simplify(sum(terms))
     return response("Divergencia", result, [step("Campo", sp.Matrix(parts)), step("Derivadas de las componentes", sp.Matrix(terms)), step("∇·F", result)],
                     "La divergencia positiva indica una fuente local; la negativa, un sumidero.", "Se usa para analizar expansión de flujo, fuentes térmicas o conservación de masa.", vector_field_plot(parts))
 
@@ -48,7 +52,7 @@ def curl(expression: str, params: dict):
 
 def laplacian(expression: str, params: dict):
     f = safe_expr(expression); result = sp.simplify(sp.diff(f, x, 2)+sp.diff(f, y, 2)+sp.diff(f, z, 2))
-    return response("Laplaciano", result, [step("Función escalar", f), step("∂²f/∂x²", sp.diff(f, x, 2)), step("∂²f/∂y²", sp.diff(f, y, 2)), step("Δf", result)],
+    return response("Laplaciano", result, [step("Función escalar", f), step("∂²f/∂x²", sp.diff(f, x, 2)), step("∂²f/∂y²", sp.diff(f, y, 2)), step("∂²f/∂z²", sp.diff(f, z, 2)), step("Δf", result)],
                     "El laplaciano resume la curvatura o difusión neta de un campo escalar.", "Aparece en ecuaciones de conducción de calor, potencial eléctrico y difusión.")
 
 
@@ -65,7 +69,7 @@ def conservative(expression: str, params: dict):
     if sp.simplify(py-qx) != 0:
         return response("Campo no conservativo", py-qx, [step("∂P/∂y", py), step("∂Q/∂x", qx)], "El rotacional escalar no es cero; no existe potencial global bajo este criterio.", "El trabajo puede depender de la trayectoria de un proceso.", vector_field_plot([p,q]))
     potential = sp.integrate(p,x); potential = sp.simplify(potential + sp.integrate(q-sp.diff(potential,y),y))
-    return response("Campo conservativo", potential, [step("∂P/∂y", py), step("∂Q/∂x", qx), step("Potencial Φ", potential)], "Las derivadas cruzadas coinciden y el campo admite potencial Φ.", "La diferencia de potencial permite calcular trabajo de forma eficiente e independiente de la trayectoria.", vector_field_plot([p,q]))
+    return response("Potencial candidato", potential, [step("∂P/∂y", py), step("∂Q/∂x", qx), step("Potencial Φ", potential)], "Las derivadas cruzadas coinciden. El potencial debe comprobarse en un dominio donde sea diferenciable; esta igualdad no demuestra conservatividad global en dominios con agujeros.", "La diferencia de potencial permite calcular trabajo de forma eficiente e independiente de la trayectoria.", vector_field_plot([p,q]))
 
 
 def green(expression: str, params: dict):
@@ -73,7 +77,7 @@ def green(expression: str, params: dict):
     integrand=sp.simplify(sp.diff(q,x)-sp.diff(p,y)); area=sp.simplify(sp.integrate(sp.integrate(integrand,(x,xa,xb)),(y,ya,yb)))
     # Recorrido antihorario del rectángulo para la verificación de Green.
     bottom=sp.integrate(p.subs(y,ya),(x,xa,xb)); right=sp.integrate(q.subs(x,xb),(y,ya,yb)); top=sp.integrate(p.subs(y,yb),(x,xb,xa)); left=sp.integrate(q.subs(x,xa),(y,yb,ya)); line=sp.simplify(bottom+right+top+left)
-    return response("Teorema de Green", area, [step("Rotacional escalar", integrand), step("Integral doble", area), step("Integral de línea cerrada", line)], "Ambas integrales coinciden para la frontera positivamente orientada de la región rectangular.", "Green conecta circulación de borde con comportamiento interno de una región, útil en fluidos y electromagnetismo.", vector_field_plot([p,q]))
+    return response("Teorema de Green", area, [step("Rotacional escalar", integrand), step("Integral doble", area), step("Integral de línea cerrada", line)], "Compara ambos valores. Green requiere un campo continuamente diferenciable en un entorno de la región y frontera positivamente orientada; esta herramienta no verifica todas esas hipótesis.", "Green conecta circulación de borde con comportamiento interno de una región, útil en fluidos y electromagnetismo.", vector_field_plot([p,q]))
 
 
 HANDLERS = {name: globals()[name] for name in OPERATIONS}

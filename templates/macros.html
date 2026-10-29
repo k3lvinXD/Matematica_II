@@ -7,11 +7,11 @@
     <label class="form-label" for="{{ id }}-input">Expresión matemática</label>
     <math-field id="{{ id }}-input" class="math-input" data-math-input virtual-keyboard-mode="manual">{{ example }}</math-field>
     <div class="math-toolbar mt-2" data-toolbar>
-      <button type="button" data-insert="+">+</button><button type="button" data-insert="-">−</button><button type="button" data-insert="\\frac{a}{b}">a⁄b</button><button type="button" data-insert="^2">x²</button><button type="button" data-insert="\\sqrt{x}">√</button><button type="button" data-insert="\\sin(\\theta)">sin</button><button type="button" data-insert="\\pi">π</button><button type="button" data-insert="\\nabla">∇</button>
+      <button type="button" data-insert="+">+</button><button type="button" data-insert="-">−</button><button type="button" data-insert="\frac{x}{y}">a⁄b</button><button type="button" data-insert="^2">x²</button><button type="button" data-insert="\sqrt{x}">√</button><button type="button" data-insert="\sin(\theta)">sin</button><button type="button" data-insert="\pi">π</button><button type="button" data-insert="\nabla">∇</button>
     </div>
     <div class="row g-2 mt-2">
       {% for field in fields %}
-      <div class="col-6 col-md-{{ field.get('width', 3) }}"><label class="form-label small">{{ field.label }}</label><input class="form-control form-control-sm" data-param="{{ field.key }}" value="{{ field.default }}" placeholder="{{ field.get('placeholder', '') }}"></div>
+      <div class="col-6 col-md-{{ field.get('width', 3) }}"><label class="form-label small" for="{{ id }}-{{ field.key }}">{{ field.label }}</label>{% if field.get('options') %}<select id="{{ id }}-{{ field.key }}" class="form-select form-select-sm" data-param="{{ field.key }}">{% for option in field.options %}<option value="{{ option.value }}" {% if option.value == field.default %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select>{% else %}<input id="{{ id }}-{{ field.key }}" class="form-control form-control-sm" data-param="{{ field.key }}" value="{{ field.default }}" placeholder="{{ field.get('placeholder', '') }}">{% endif %}</div>
       {% endfor %}
     </div>
     <div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-primary" data-calculate>🧮 Calcular</button><button class="btn btn-outline-light" data-toggle-results>🔍 Ver procedimiento</button>{% if plot %}<button class="btn btn-outline-info" data-plot-surface>📊 Ver gráfica</button>{% endif %}<button class="btn btn-outline-secondary" data-reset>↻ Nuevo problema</button></div>

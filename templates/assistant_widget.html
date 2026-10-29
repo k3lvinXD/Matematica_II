@@ -1,0 +1,5 @@
+{% if active != 'asistente' %}
+{% from 'assistant_panel.html' import assistant_panel %}
+{{ assistant_panel(false) }}
+<button id="assistant-launcher" class="ma-launcher" type="button" aria-controls="math-assistant" aria-expanded="false"><span class="ma-launcher-core" aria-hidden="true"></span> <span data-launcher-name>JARVIS</span></button>
+{% endif %}
