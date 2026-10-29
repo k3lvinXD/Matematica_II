@@ -1,0 +1,9 @@
+{% extends 'academy/layout.html' %}
+{% block academy_title %}Mis cursos{% endblock %}
+{% block academy_body %}
+{% if academic_user.teacher_requested %}<div class="alert alert-info">Tu solicitud de profesor está pendiente. Mientras tanto puedes utilizar tu cuenta de estudiante.</div>{% endif %}
+<div class="academy-card mb-4"><form method="post" action="{{ url_for('academy.create_course' if academic_user.role=='teacher' else 'academy.join_course') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% if academic_user.role=='teacher' %}<h2 class="h4">Crear curso</h2><label>Nombre del curso<input name="title" maxlength="120" placeholder="Matemática II · Grupo A" required></label><button class="btn btn-primary">Crear curso</button>
+{% else %}<h2 class="h4">Inscribirme en un curso</h2><label>Código del profesor<input name="code" maxlength="24" required placeholder="Código de inscripción"></label><button class="btn btn-primary">Inscribirme</button>{% endif %}</form></div>
+<div class="row g-3">{% for course in courses %}<div class="col-md-6"><a class="academy-card d-block text-decoration-none" href="{{ url_for('academy.course_page',course_id=course.id) }}"><h2 class="h4">{{ course.title }}</h2><span>Ver curso y exámenes →</span></a></div>{% else %}<p>Aún no tienes cursos. Usa el formulario para empezar.</p>{% endfor %}</div>
+{% endblock %}

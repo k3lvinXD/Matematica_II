@@ -1,0 +1,13 @@
+{% extends 'academy/layout.html' %}
+{% block academy_title %}{{ 'Crear cuenta' if register else 'Iniciar sesión' }}{% endblock %}
+{% block academy_body %}
+<div class="academy-card academy-auth"><p>{{ 'Regístrate como estudiante. Si eres docente, puedes solicitar la autorización.' if register else 'Accede con tu cuenta. El servidor determina tus permisos.' }}</p>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% if register %}<label>Nombre<input name="name" maxlength="100" required autocomplete="name"></label>{% endif %}
+<label>Correo<input type="email" name="email" maxlength="254" required autocomplete="username"></label>
+<label>Contraseña<input type="password" name="password" {% if register %}minlength="12"{% endif %} maxlength="128" required autocomplete="{{ 'new-password' if register else 'current-password' }}"></label>
+{% if register %}<label>Confirmar contraseña<input type="password" name="confirm" minlength="12" maxlength="128" required autocomplete="new-password"></label><label class="academy-check"><input type="checkbox" name="teacher_request" value="yes"> Solicitar acceso como profesor</label><p class="small">Esta solicitud no concede permisos de profesor. El responsable del servidor debe autorizarla.</p>{% endif %}
+<button class="btn btn-primary">{{ 'Crear cuenta' if register else 'Ingresar' }}</button></form>
+<a class="d-block mt-3" href="{{ url_for('academy.login' if register else 'academy.register') }}">{{ 'Ya tengo cuenta' if register else 'Crear una cuenta' }}</a>
+{% if not register %}<p class="small mt-3">Si olvidaste tu contraseña, solicita al responsable del servidor que la restablezca.</p>{% endif %}</div>
+{% endblock %}

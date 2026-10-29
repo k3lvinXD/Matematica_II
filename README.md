@@ -289,3 +289,8 @@ Referencia: [API oficial de Voice.ai](https://voice.ai/docs/api-reference/text-t
 
 
 Prueba real de esta entrega: Voice.ai devolvió HTTP 403 con una página HTML de bloqueo de Cloudflare antes de entregar audio. No se pudo validar el acceso de la clave a esta voz ni escuchar el resultado. La aplicación distingue este bloqueo de errores de autenticación y cuota. Se requiere resolver el acceso con Voice.ai si también ocurre al ejecutar el proyecto.
+
+## Aula virtual
+
+Cuentas de estudiantes y profesores, cursos por código y exámenes automáticos: consulta [GUIA_AULA.md](GUIA_AULA.md). En local funciona con SQLite; SQL Server se configura cuando dispongas de un servidor.
+

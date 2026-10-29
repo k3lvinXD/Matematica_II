@@ -120,5 +120,9 @@ def check_exercise(exercise_id):
     return execute("exercise", {"exercise_id": exercise_id})
 
 
+from academy import init_app as init_academy
+init_academy(app)
+
+
 if __name__ == "__main__":
     app.run()

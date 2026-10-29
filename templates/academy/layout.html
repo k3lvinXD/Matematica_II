@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="container py-5 academy-shell">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div><p class="eyebrow">MATEMÁTICA II · AULA</p><h1 class="h2">{% block academy_title %}Aula virtual{% endblock %}</h1></div>
+    {% if academic_user %}<div><span>{{ academic_user.name }} · {{ 'Profesor' if academic_user.role=='teacher' else 'Estudiante' }}</span><form class="d-inline ms-3" method="post" action="{{ url_for('academy.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-light btn-sm">Salir</button></form></div>{% endif %}
+  </div>
+  {% for category,message in get_flashed_messages(with_categories=true) %}<div class="alert alert-{{ category }}" role="status">{{ message }}</div>{% endfor %}
+  {% block academy_body %}{% endblock %}
+</section>
+{% endblock %}

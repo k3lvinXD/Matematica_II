@@ -1,0 +1,13 @@
+{% extends 'academy/layout.html' %}
+{% block academy_title %}{{ course.title }}{% endblock %}
+{% block academy_body %}
+<a href="{{ url_for('academy.dashboard') }}">← Mis cursos</a>
+{% if academic_user.role=='teacher' %}
+<div class="academy-card my-4"><h2 class="h4">Inscripciones</h2><p>Comparte este código con tus estudiantes: <strong class="academy-code">{{ course.join_code }}</strong></p><details><summary>Estudiantes inscritos ({{ students|length }})</summary><ul>{% for student in students %}<li>{{ student.name }} · {{ student.email }}</li>{% else %}<li>No hay estudiantes inscritos.</li>{% endfor %}</ul></details></div>
+<div class="academy-card my-4"><h2 class="h4">Generar un examen</h2><p>Se genera un borrador con respuestas exactas. Debes revisar los ejercicios antes de publicarlo.</p>
+<form method="post" action="{{ url_for('academy.generate_exam',course_id=course.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Título<input name="title" maxlength="160" required placeholder="Examen de la Unidad 1"></label>
+<div class="row"><label class="col-md-6">Tema<select name="topic">{% for group,items in topic_groups.items() %}<optgroup label="{{ group }}">{% for key,label in items.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</optgroup>{% endfor %}</select></label><label class="col-md-6">Dificultad<select name="difficulty">{% for key,label in levels.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label></div>
+<div class="row"><label class="col-md-6">Ejercicios (1–20)<input type="number" name="count" value="5" min="1" max="20" required></label><label class="col-md-6">Duración en minutos (5–180)<input type="number" name="duration" value="30" min="5" max="180" required></label></div><button class="btn btn-primary">Generar borrador</button></form></div>
+{% endif %}
+<h2 class="h4 mt-4">Exámenes</h2><div class="row g-3">{% for exam in exams %}<div class="col-md-6"><a class="academy-card d-block text-decoration-none" href="{{ url_for('academy.exam_page',exam_id=exam.id) }}"><h3 class="h5">{{ exam.title }}</h3><p>{{ {'draft':'Borrador','published':'Abierto','closed':'Cerrado'}[exam.state] }} · {{ exam.duration }} minutos · Un intento</p></a></div>{% else %}<p>No hay exámenes disponibles.</p>{% endfor %}</div>
+{% endblock %}

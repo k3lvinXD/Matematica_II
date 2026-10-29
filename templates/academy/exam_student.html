@@ -1,0 +1,4 @@
+{% extends 'academy/layout.html' %}
+{% block academy_title %}{{ exam.title }}{% endblock %}
+{% block academy_body %}<a href="{{ url_for('academy.course_page',course_id=course.id) }}">← {{ course.title }}</a><div class="academy-card mt-4"><p>Duración: {{ exam.duration }} minutos desde que inicias. Un intento por estudiante.</p><p>Las respuestas se guardan mientras trabajas. Las notas y soluciones se muestran cuando el profesor cierra el examen.</p>
+{% if attempt %}<a class="btn btn-primary" href="{{ url_for('academy.take_exam',attempt_id=attempt.id) }}">{{ 'Ver entrega' if attempt.submitted_at else 'Continuar mi intento' }}</a>{% elif exam.state=='published' %}<form method="post" action="{{ url_for('academy.start_exam',exam_id=exam.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary">Iniciar examen y comenzar el tiempo</button></form>{% else %}<p>El examen está cerrado.</p>{% endif %}</div>{% endblock %}

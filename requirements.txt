@@ -5,3 +5,9 @@ scipy>=1.11,<2.0
 gunicorn>=23,<24
 python-dotenv
 google-generativeai
+
+SQLAlchemy>=2.0,<2.1
+
+matplotlib>=3.9,<4
+reportlab>=4,<5
+Pillow>=11,<13

@@ -1,0 +1,3 @@
+{% extends 'academy/layout.html' %}
+{% block academy_title %}Aula no disponible{% endblock %}
+{% block academy_body %}<div class="alert alert-warning">{{ message }}</div><a href="{{ url_for('index') }}">Volver al inicio</a>{% endblock %}

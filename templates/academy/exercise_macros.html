@@ -1,0 +1,15 @@
+{% macro statement(question) -%}
+<p>{{ question.prompt }}</p>
+{% if question.formula %}<div class="exercise-formula">\[{{ question.formula }}\]</div>{% endif %}
+{%- endmacro %}
+{% macro editor(name,value='',label='Respuesta matemática',key='') -%}
+<div class="academy-math-editor"><label class="form-label" for="input-{{ key }}{{ name }}">{{ label }}</label>
+<input id="input-{{ key }}{{ name }}" class="form-control" name="{{ name }}" value="{{ value }}" maxlength="{{ 300 if name=='formula' else 240 }}" autocomplete="off" data-answer-input placeholder="Ejemplo: 3/5">
+<div data-math-host></div><div class="math-toolbar mt-2" data-answer-toolbar hidden>
+<button type="button" data-insert="+">+</button><button type="button" data-insert="-">−</button><button type="button" data-insert="\frac{&#35;0}{&#35;0}">a⁄b</button><button type="button" data-insert="^2">x²</button><button type="button" data-insert="\sqrt{&#35;0}">√</button><button type="button" data-insert="\pi">π</button><button type="button" data-keyboard>Teclado matemático</button></div></div>
+{%- endmacro %}
+{% macro feedback(item) -%}
+{% if not item or item.correct is none %}<strong class="text-warning">Pendiente de revisión</strong>
+{% elif item.correct %}<strong class="text-success">Correcto</strong>{% else %}<strong class="text-danger">Incorrecto o sin respuesta</strong>{% endif %}
+{% if item and item.status=='teacher' %}<span> · Revisado por el profesor</span>{% endif %}
+{%- endmacro %}
