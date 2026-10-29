@@ -175,7 +175,7 @@
     stopListening();stopSpeech();const current=++version;setBusy(true);notice('Consultando al asistente…');
     if(settings.autoSpeak&&settings.voiceEngine==='browser')speak('Claro. Estoy preparando tu respuesta.',{immediate:true});
     const pending=addMessage({role:'user',text:message});q('[data-log]').scrollTop=q('[data-log]').scrollHeight;
-    const controller=new AbortController();requestController=controller;const timer=setTimeout(()=>controller.abort(),27000);
+    const controller=new AbortController();requestController=controller;const timer=setTimeout(()=>controller.abort(),65000);
     try {
       const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});
       const data=await response.json();if(!response.ok)throw new Error(data.error||'No se pudo obtener respuesta.');

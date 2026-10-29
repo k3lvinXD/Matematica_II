@@ -37,8 +37,7 @@ SAFE_GLOBALS = {
 KNOWN_WORDS = tuple(sorted(SAFE_LOCALS, key=len, reverse=True))
 
 
-class MathInputError(ValueError):
-    """Error de entrada traducible a un mensaje amigable para la interfaz."""
+from .errors import MathInputError
 
 def _split_math_word(word: str) -> list[str] | None:
     """Separa xsin en x, sin de forma segura."""

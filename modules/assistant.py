@@ -1,7 +1,11 @@
 """Conversación acotada; las credenciales y el cálculo permanecen en el servidor."""
 import json
 import os
-from .common import MathInputError
+from .errors import MathInputError
+import re
+import urllib.request
+import urllib.error
+import logging
 
 SYSTEM = """Eres un asistente virtual educativo de Matemática II. Responde en español claro.
 Ayuda con dudas, conceptos y ejemplos, especialmente cálculo multivariable y programación del proyecto.
@@ -53,22 +57,37 @@ def generate_reply(history, message, mode, verified):
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
         return {"error": "El chat necesita GEMINI_API_KEY en el servidor. Las calculadoras siguen disponibles.", "status": 503}
-    import google.generativeai as genai
-    genai.configure(api_key=key)
-    instruction = SYSTEM + ("\nTono JARVIS: sereno, preciso y cordial; evita teatralidad excesiva." if mode == "jarvis" else "\nTono de tutor paciente: guía al estudiante con ejemplos y preguntas.")
-    model = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite"), system_instruction=instruction)
-    # Un único mensaje estructurado evita otorgar roles de sistema a datos del cliente.
-    prompt = json.dumps({"conversation": history, "question": message, "server_calculation": verified}, ensure_ascii=False)
+    model = os.getenv('GEMINI_MODEL', 'gemini-3.1-flash-lite').strip()
+    if not re.fullmatch(r'[a-zA-Z0-9._-]+', model):
+        return {'error':'Revisa GEMINI_MODEL en el servidor.', 'status':503}
+    instruction = SYSTEM + ('\nTono JARVIS: sereno, preciso y cordial.' if mode=='jarvis' else '\nTono de tutor paciente.')
+    prompt=json.dumps({'conversation':history,'question':message,'server_calculation':verified},ensure_ascii=False)
+    body={'systemInstruction':{'parts':[{'text':instruction}]},
+          'contents':[{'role':'user','parts':[{'text':prompt}]}],
+          'generationConfig':{'temperature':0.3,'maxOutputTokens':1800}}
+    request=urllib.request.Request('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',
+        data=json.dumps(body).encode('utf-8'), headers={'Content-Type':'application/json','x-goog-api-key':key},method='POST')
     try:
-        response = model.generate_content(prompt, generation_config={"temperature": 0.3, "max_output_tokens": 1800}, request_options={"timeout": 15, "retry": None})
-        text = response.text.strip()
-    except Exception as exc:
-        name = type(exc).__name__
-        if name in ("ResourceExhausted", "TooManyRequests"):
-            return {"error": "La cuota del servicio de IA está temporalmente agotada. Intenta más tarde.", "status": 503}
-        if name in ("DeadlineExceeded", "TimeoutError"):
-            return {"error": "La IA tardó demasiado. Puedes volver a enviar tu pregunta.", "status": 504}
-        return {"error": "No se pudo obtener una respuesta de IA. Revisa la configuración del proveedor o intenta más tarde.", "status": 503}
+        with urllib.request.urlopen(request,timeout=35) as response:
+            raw=response.read(2_000_001)
+        if len(raw)>2_000_000:raise ValueError('Respuesta demasiado grande')
+        result=json.loads(raw)
+        candidates=result.get('candidates',[])
+        parts=candidates[0].get('content',{}).get('parts',[]) if candidates else []
+        text='\n'.join(p['text'] for p in parts if isinstance(p.get('text'),str) and not p.get('thought')).strip()
+    except urllib.error.HTTPError as exc:
+        logging.getLogger(__name__).warning('gemini_http status=%s',exc.code)
+        messages={400:'Gemini rechazó la solicitud. Revisa la configuración del modelo y la clave.',
+                  401:'Gemini rechazó la clave del servidor.',403:'Gemini no permite esta solicitud. Revisa los permisos de la clave.',
+                  404:'El modelo configurado en GEMINI_MODEL no está disponible.',429:'La cuota de Gemini está agotada o hay demasiadas solicitudes. Intenta más tarde.',
+                  504:'Gemini agotó su tiempo de respuesta. Intenta de nuevo.'}
+        return {'error':messages.get(exc.code,'Gemini no está disponible temporalmente. Intenta más tarde.'),'status':504 if exc.code==504 else 503}
+    except (TimeoutError, urllib.error.URLError) as exc:
+        is_timeout=isinstance(exc,TimeoutError) or isinstance(getattr(exc,'reason',None),TimeoutError)
+        logging.getLogger(__name__).warning('gemini_connection type=%s',type(exc).__name__)
+        return {'error':'Gemini tardó más de 35 segundos.' if is_timeout else 'No se pudo conectar el servidor con Gemini.', 'status':504 if is_timeout else 503}
+    except Exception:
+        return {'error':'No se pudo interpretar la respuesta de Gemini.', 'status':503}
     if not text:
         return {"error": "La IA no devolvió texto. Intenta reformular tu pregunta.", "status": 503}
     if len(text) > 6000:

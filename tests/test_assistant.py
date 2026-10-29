@@ -2,8 +2,10 @@ import json
 import os
 import sys
 import types
+import urllib.error
+import subprocess
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 from modules import assistant
 from modules.common import MathInputError
 from modules.runtime import run_worker
@@ -38,24 +40,21 @@ class AssistantTests(unittest.TestCase):
             self.assertEqual(assistant.generate_reply([],'Hi','mentor',None)['status'],503)
 
     def provider(self,text=None,error=None):
-        model=Mock()
-        model.generate_content.return_value=types.SimpleNamespace(text=text)
-        if error:model.generate_content.side_effect=error
-        sdk=types.ModuleType('google.generativeai')
-        sdk.configure=Mock(); sdk.GenerativeModel=Mock(return_value=model)
-        import google
-        with patch.dict(sys.modules,{'google.generativeai':sdk}), patch.object(google,'generativeai',sdk,create=True), patch.dict(os.environ,{'GEMINI_API_KEY':'test-only'}), patch('dotenv.load_dotenv'):
+        model=MagicMock()
+        model.return_value.__enter__.return_value.read.return_value=json.dumps({'candidates':[{'content':{'parts':[{'text':text}]}}]}).encode()
+        if error:model.side_effect=error
+        with patch('urllib.request.urlopen',model), patch.dict(os.environ,{'GEMINI_API_KEY':'test-only'}),patch('dotenv.load_dotenv'):
             result=assistant.generate_reply([{'role':'user','text':'Antes'}],'Pregunta','jarvis',None)
         return result,model
 
     def test_provider_success_structured_prompt(self):
         result,model=self.provider('Respuesta')
         self.assertEqual(result,{'reply':'Respuesta','calculation_used':False})
-        self.assertEqual(json.loads(model.generate_content.call_args.args[0])['question'],'Pregunta')
-        self.assertEqual(model.generate_content.call_args.kwargs['request_options']['timeout'],15)
+        self.assertEqual(json.loads(json.loads(model.call_args.args[0].data)['contents'][0]['parts'][0]['text'])['question'],'Pregunta')
+        self.assertEqual(model.call_args.kwargs['timeout'],35)
 
     def test_provider_errors_hide_details(self):
-        for error,status in [(type('ResourceExhausted',(Exception,),{})('secret'),503),(TimeoutError('secret'),504),(ValueError('secret'),503)]:
+        for error,status in [(urllib.error.HTTPError('url',429,'secret',{},None),503),(TimeoutError('secret'),504),(ValueError('secret'),503)]:
             result,_=self.provider(error=error)
             self.assertEqual(result['status'],status);self.assertNotIn('secret',result['error'])
         self.assertEqual(self.provider(' ')[0]['status'],503)
@@ -74,7 +73,7 @@ class AssistantTests(unittest.TestCase):
     def test_api_timeout_and_limits(self):
         with app.test_client() as client, patch('app.run_worker',return_value={'ok':True,'answer':{'reply':'Hello'}}) as worker:
             self.assertEqual(client.post('/api/chat',json={'message':'hi'}).status_code,200)
-            self.assertEqual(worker.call_args.kwargs,{'action':'chat','timeout':20})
+            self.assertEqual(worker.call_args.kwargs,{'action':'chat','timeout':55})
             self.assertEqual(client.post('/api/chat',json=[]).status_code,400)
             self.assertEqual(client.post('/api/chat',json={'message':'x'*17000}).status_code,413)
 
@@ -88,5 +87,11 @@ class AssistantTests(unittest.TestCase):
         with patch.dict(os.environ,{'GEMINI_API_KEY':''}):
             result=run_worker(data,action='chat')
         self.assertTrue(result['ok']);self.assertEqual(result['answer']['status'],503)
+
+class LightweightChatTests(unittest.TestCase):
+    def test_chat_does_not_import_math_or_legacy_sdk(self):
+        code="import modules.chat_worker,sys; assert not any(n in sys.modules for n in ['sympy','numpy','scipy','google.generativeai']); print('ok')"
+        result=subprocess.run([sys.executable,'-B','-c',code],capture_output=True,text=True,check=True)
+        self.assertEqual(result.stdout.strip(),'ok')
 
 if __name__=='__main__':unittest.main()

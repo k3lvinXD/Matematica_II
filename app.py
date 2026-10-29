@@ -6,7 +6,7 @@ import uuid
 from modules.runtime import SLOTS, run_worker
 
 app = Flask(__name__)
-app.config.update(MAX_CONTENT_LENGTH=16 * 1024, MATH_TIMEOUT=12, AI_TIMEOUT=20, SPEECH_TIMEOUT=24)
+app.config.update(MAX_CONTENT_LENGTH=16 * 1024, MATH_TIMEOUT=12, AI_TIMEOUT=20, SPEECH_TIMEOUT=24, CHAT_TIMEOUT=55)
 app.json.sort_keys = False
 
 
@@ -56,7 +56,7 @@ def execute(action, extra=None):
     if not SLOTS.acquire(blocking=False):
         return jsonify(error="Hay cálculos en curso. Intenta de nuevo en unos segundos."), 503
     try:
-        timeout = app.config["SPEECH_TIMEOUT" if action == "speech" else "AI_TIMEOUT" if action in ("explain", "chat") else "MATH_TIMEOUT"]
+        timeout = app.config["CHAT_TIMEOUT" if action == "chat" else "SPEECH_TIMEOUT" if action == "speech" else "AI_TIMEOUT" if action in ("explain", "chat") else "MATH_TIMEOUT"]
         result = run_worker(data, action=action, timeout=timeout)
         if not result["ok"]:
             status = result.get("status", 500)

@@ -57,7 +57,7 @@ class SpeechTests(unittest.TestCase):
             self.assertEqual(worker.call_args.kwargs,{'action':'speech','timeout':24})
             self.assertEqual(client.post('/api/speech',json=[]).status_code,400)
             html=client.get('/asistente').text
-            self.assertIn('Español latinoamericano · navegador',html);self.assertIn('value="orb" selected',html);self.assertNotIn('Cuphead',html);self.assertIn('jarvis-core-7',html)
+            self.assertIn('Español latinoamericano · navegador',html);self.assertIn('value="orb" selected',html);self.assertNotIn('Cuphead',html);self.assertIn('chat-timeout-8',html)
 
 
 if __name__=='__main__':unittest.main()
