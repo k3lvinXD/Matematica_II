@@ -7,3 +7,7 @@ instance/
 *.sqlite3
 .env.*
 !.env.example
+
+.ubuntu.env
+backups/
+traslado-academia*.json

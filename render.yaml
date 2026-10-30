@@ -1,0 +1,16 @@
+# Plantilla para un servicio Docker nuevo. No crea una base SQL automáticamente.
+services:
+  - type: web
+    name: matematica-ii-sql
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ACADEMY_PRODUCTION
+        value: "1"
+      - key: ACADEMY_ODBC_CONNECTION
+        sync: false

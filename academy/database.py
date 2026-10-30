@@ -51,6 +51,7 @@ def make_engine(app):
         @event.listens_for(engine,'connect')
         def configure_sqlite(dbapi_connection, record):
             dbapi_connection.execute('PRAGMA foreign_keys=ON')
-    if engine.dialect.name not in ('sqlite','mssql'):
-        raise ValueError('Usa SQLite para desarrollo o SQL Server para el aula.')
+    if engine.dialect.name not in ('sqlite','mssql','postgresql'):
+        engine.dispose()
+        raise ValueError('Usa SQLite, SQL Server o PostgreSQL para el aula.')
     return engine

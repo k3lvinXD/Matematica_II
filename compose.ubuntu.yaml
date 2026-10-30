@@ -1,0 +1,37 @@
+name: matematica-ii
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: matematica
+      POSTGRES_DB: matematica
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Ejecuta python3 deploy/prepare_ubuntu.py}
+    volumes:
+      - academic_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U matematica -d matematica"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu
+    restart: unless-stopped
+    env_file: .ubuntu.env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:10000"
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  academic_data:
